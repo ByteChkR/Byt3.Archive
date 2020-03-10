@@ -29,13 +29,13 @@ namespace Byt3.Archive
 
         //Unique Temp File per instance of the Archiver
         private readonly string TempFile = Path.Combine(TempPath, Path.GetTempFileName());
-        
+
         //The Original File path(when saving it will write it to this file
         private readonly string SourceFile;
 
         //Hack for getting the MSBUILD executable.
-        private const string MSBUILD_PATH = @"D:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe";
-        
+        private static string MSBUILD_PATH = @"D:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe";
+
         //When compiling a Self Extracting Archive, it will split a directory in multiple chunks to prevent the msbuild engine to run out of memory
         //This happens when a embedded file is too big.
         private const int MAX_SFX_ARCHIVE_SIZE_MB = 128;
@@ -139,19 +139,27 @@ namespace Byt3.Archive
                 return File.Open(TempFile, FileMode.Create);
             }
 
-            bool c = false;
             string s = Path.GetFileName(path);
-            string[] ss = s.Split('.');
+            bool c = IsCompressed(s);
+
+            return HandleArchiveCompression(File.Open(path, FileMode.Open), c);
+        }
+
+        private static bool IsCompressed(string path)
+        {
+            bool c = false;
+            string[] ss = path.Split('.');
             for (int i = ss.Length - 2; i < ss.Length; i++)
             {
                 c |= ss[i] == "archc";
             }
-            return HandleArchiveCompression(File.Open(path, FileMode.Open), c);
+
+            return c;
         }
 
 
         #endregion
-        
+
         #region IDisposable Implementation
 
         /// <summary>
@@ -160,6 +168,11 @@ namespace Byt3.Archive
         public void Dispose()
         {
             Dispose(false, false);
+        }
+
+        public void Dispose(bool saveArchiveHeader)
+        {
+            Dispose(saveArchiveHeader, IsCompressed(SourceFile));
         }
 
         /// <summary>
@@ -200,7 +213,7 @@ namespace Byt3.Archive
 
 
         #endregion
-        
+
         #region AddImplementation
 
         /// <summary>
@@ -549,6 +562,13 @@ namespace Byt3.Archive
 
         #endregion
 
+
+        public static void SetMSBuildExecutablePath(string path)
+        {
+            if (File.Exists(path) && path.ToLower().EndsWith("msbuild.exe"))
+                MSBUILD_PATH = path;
+        }
+
         /// <summary>
         /// Creates a Self Extracting Archive from a folder.
         /// </summary>
@@ -561,7 +581,7 @@ namespace Byt3.Archive
 
 
             string[] packs = PackageSplitted(folder, compression);
-            CreateSFXArchive(packs, compression, SFXPath, autoStartCommand);
+            CreateSFXArchive(packs, SFXPath, autoStartCommand);
 
             if (packs.Length > 0)
                 Directory.Delete(Path.GetDirectoryName(Path.GetFullPath(packs[0])));
@@ -574,11 +594,11 @@ namespace Byt3.Archive
         /// <param name="compression">Uses Compression on the archives?</param>
         /// <param name="SFXPath">The Output File</param>
         /// <param name="autoStartCommand">The Command that is executed when unpacked(empty = ExtratTargetDialog, command = ExtractToTemp and Execute)</param>
-        public static void CreateSFXArchive(string[] archivePaths, bool compression, string SFXPath, string autoStartCommand)
+        public static void CreateSFXArchive(string[] archivePaths, string SFXPath, string autoStartCommand)
         {
 
             string sfxSrcPath = InitializeSFXSource();
-
+            bool compression = IsCompressed(archivePaths[0]);
             string csFolder = Path.Combine(sfxSrcPath, "Byt3.Archive.SFX");
             string csFile = Path.Combine(csFolder, "Byt3.Archive.SFX.csproj");
             string dstArchPath = Path.Combine(csFolder, "content", compression ? "archive.archc" : "archive.arch");

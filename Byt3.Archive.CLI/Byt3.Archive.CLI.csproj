@@ -39,6 +39,9 @@
     <StartupObject>Byt3.Archive.CLI.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommandRunner">
+      <HintPath>..\CommandRunner\CommandRunner\bin\Release\netstandard2.0\CommandRunner.dll</HintPath>
+    </Reference>
     <Reference Include="Costura, Version=3.3.3.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.3.3\lib\net40\Costura.dll</HintPath>
     </Reference>
@@ -52,6 +55,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\CompressionCommand.cs" />
+    <Compile Include="Commands\CreateSFXFromArchiveCommand.cs" />
+    <Compile Include="Commands\CreateSFXFromDirectoryCommand.cs" />
+    <Compile Include="Commands\ExtractCommand.cs" />
+    <Compile Include="Commands\AddWebDirectoryCommand.cs" />
+    <Compile Include="Commands\AddWebFileCommand.cs" />
+    <Compile Include="Commands\AddLocalDirectoryCommand.cs" />
+    <Compile Include="Commands\AddLocalFileCommand.cs" />
+    <Compile Include="Commands\HelpCommand.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
